@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/emersion/go-smtp"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -30,8 +31,9 @@ type Suite struct {
 		Dir      string `json:"dir"`
 		Testmode bool   `json:"testmode"`
 	} `json:"http_server,omitempty"`
-	Tests []interface{}          `json:"tests"`
-	Store map[string]interface{} `json:"store"`
+	SMTPServer *SMTPServer            `json:"smtp_server,omitempty"`
+	Tests      []interface{}          `json:"tests"`
+	Store      map[string]interface{} `json:"store"`
 
 	StandardHeader          map[string]*string `yaml:"header" json:"header"`
 	StandardHeaderFromStore map[string]string  `yaml:"header_from_store" json:"header_from_store"`
@@ -47,6 +49,7 @@ type Suite struct {
 	httpServerDir   string
 	idleConnsClosed chan struct{}
 	HTTPServerHost  string
+	smtpServer      *smtp.Server
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
@@ -159,6 +162,8 @@ func (ats *Suite) Run() bool {
 	logrus.Infof("[%2d] '%s'", ats.index, ats.Name)
 
 	ats.StartHttpServer()
+
+	ats.StartSMTPServer()
 
 	start := time.Now()
 

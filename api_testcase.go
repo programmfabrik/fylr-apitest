@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/emersion/go-sasl"
+	"github.com/emersion/go-smtp"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
@@ -37,6 +39,8 @@ type Case struct {
 	Delay           *int          `json:"delay_ms"`
 	BreakResponse   []interface{} `json:"break_response"`
 	CollectResponse interface{}   `json:"collect_response"`
+
+	SendEmailData *interface{} `json:"send_email"`
 
 	LogNetwork *bool `json:"log_network"`
 	LogVerbose *bool `json:"log_verbose"`
@@ -90,6 +94,11 @@ func (testCase Case) runAPITestCase(parentReportElem *report.ReportElement) bool
 	success := true
 	if testCase.RequestData != nil {
 		success, err = testCase.run()
+	}
+
+	if testCase.SendEmailData != nil {
+		err = testCase.sendEmail()
+		success = success && (err == nil)
 	}
 
 	elapsed := time.Since(start)
@@ -252,7 +261,7 @@ func (testCase Case) executeRequest(counter int) (compare.CompareResult, api.Req
 	apiResp.Format = expectedResponse.Format
 
 	if testCase.ResponseData != nil || testCase.CollectResponse != nil ||
-			len(testCase.BreakResponse) > 0 || len(testCase.StoreResponse) > 0 {
+		len(testCase.BreakResponse) > 0 || len(testCase.StoreResponse) > 0 {
 		apiRespJsonString, err = apiResp.ServerResponseToJsonString(false)
 		if err != nil {
 			testCase.LogReq(req)
@@ -307,6 +316,28 @@ func (testCase Case) LogReq(req api.Request) {
 		testCase.ReportElem.SaveToReportLogF(errString)
 		logrus.Debug(errString)
 	}
+}
+
+func (testCase Case) sendEmail() error {
+	var (
+		email Email
+		err   error
+	)
+
+	// Load email
+	email, err = testCase.loadEmail()
+	if err != nil {
+		return fmt.Errorf("error loading email: %s", err)
+	}
+
+	auth := sasl.NewPlainClient("", email.Auth.Username, email.Auth.Password)
+	msg := strings.NewReader(email.Body)
+	
+	err = smtp.SendMail(util.PolyfillLocalhost(email.Addr), auth, email.Sender, email.Recipients, msg)
+	if err != nil {
+		return fmt.Errorf("error sending email: %s", err)
+	}
+	return nil
 }
 
 func limitLines(in string, limitCount int) string {
@@ -468,6 +499,15 @@ func (testCase Case) loadResponse() (api.Response, error) {
 	return res, nil
 }
 
+func (testCase Case) loadEmail() (Email, error) {
+	req, err := testCase.loadEmailSerialization()
+	if err != nil {
+		return req, fmt.Errorf("error loadEmailSerialization: %s", err)
+	}
+
+	return req, err
+}
+
 func (testCase Case) responsesEqual(expected, got api.Response) (compare.CompareResult, error) {
 	expectedJSON, err := expected.ToGenericJSON()
 	if err != nil {
@@ -549,4 +589,25 @@ func (testCase Case) loadResponseSerialization(genJSON interface{}) (api.Respons
 	}
 
 	return spec, nil
+}
+
+func (testCase Case) loadEmailSerialization() (Email, error) {
+	var (
+		email Email
+	)
+
+	_, emailData, err := template.LoadManifestDataAsObject(*testCase.SendEmailData, testCase.manifestDir, testCase.loader)
+	if err != nil {
+		return email, fmt.Errorf("error loading send email data: %s", err)
+	}
+	emailBytes, err := json.Marshal(emailData)
+	if err != nil {
+		return email, fmt.Errorf("error marshaling send email data: %s", err)
+	}
+	err = cjson.Unmarshal(emailBytes, &email)
+	if err != nil {
+		return email, fmt.Errorf("error unmarshaling send email data: %s", err)
+	}
+
+	return email, nil
 }

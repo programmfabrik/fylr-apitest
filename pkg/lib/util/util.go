@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 func Max(x, y int) int {
@@ -37,4 +38,17 @@ func GetStringFromInterface(queryParam interface{}) (string, error) {
 		jsonVal, err := json.Marshal(t)
 		return string(jsonVal), err
 	}
+}
+
+// PolyfillLocalhost from an address where it may be missing
+func PolyfillLocalhost(addr string) string {
+	addrSplit := strings.Split(addr, ":")
+	if len(addrSplit) < 2 {
+		return "localhost"
+	}
+	host := addrSplit[0]
+	if host == "" {
+		host = "localhost"
+	}
+	return fmt.Sprintf("%s:%s", host, addrSplit[1])
 }

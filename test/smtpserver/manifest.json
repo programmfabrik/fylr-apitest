@@ -1,0 +1,67 @@
+{{ $http_addr := ":9999" }}
+{{ $smtp_addr := ":9025" }}
+{
+    "http_server": {
+        "addr": "{{ $http_addr }}",
+        "dir": "../_res/assets",
+        "testmode": false
+    },
+    "smtp_server": {
+        "auth": {
+            "username": "root",
+            "password": "admin"
+        },
+        "addr": "{{ $smtp_addr }}",
+        "testmode": false
+    },
+    "store": {
+        "req_base_url": "http://localhost{{ $http_addr }}"
+    },
+    "name": "SMTP Server tests",
+    "tests": [
+        {
+            "name": "Send some email to unknown place (should fail)",
+            "description": "Send an email, just for the FAIL of it",
+            "send_email": {
+                "auth": {
+                    "username": "root",
+                    "password": "admin"
+                },
+                "addr": "10.10.10.1:143",
+                "sender": "me@my.place",
+                "recipients": ["oneguy@got.it", "theotherguy@.got.too"],
+                "body": "Im the mighty mail body."
+            },
+            "reverse_test_result": true
+        },
+        {
+            "name": "Send some email with wrong credentials (should fail)",
+            "description": "Send an email, just for the REJECT of it",
+            "send_email": {
+                "auth": {
+                    "username": "darth",
+                    "password": "vader"
+                },
+                "addr": "{{ $smtp_addr }}",
+                "sender": "me@my.place",
+                "recipients": ["oneguy@got.it", "theotherguy@.got.too"],
+                "body": "Im the mighty mail body."
+            },
+            "reverse_test_result": true
+        },
+        {
+            "name": "Send some email",
+            "description": "Send an email, just for the fun of it",
+            "send_email": {
+                "auth": {
+                    "username": "root",
+                    "password": "admin"
+                },
+                "addr": "{{ $smtp_addr }}",
+                "sender": "me@my.place",
+                "recipients": ["oneguy@got.it", "theotherguy@.got.too"],
+                "body": "Im the mighty mail body."
+            }
+        }
+    ]
+}

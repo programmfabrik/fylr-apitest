@@ -4,6 +4,8 @@ go 1.13
 
 require (
 	github.com/clbanning/mxj v1.8.4
+	github.com/emersion/go-sasl v0.0.0-20200509203442-7bfe0ed36a21
+	github.com/emersion/go-smtp v0.13.0
 	github.com/gabriel-vasile/mimetype v0.3.22
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/mattn/go-colorable v0.1.4 // indirect
