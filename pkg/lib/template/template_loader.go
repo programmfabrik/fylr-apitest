@@ -303,6 +303,15 @@ func (loader *Loader) Render(
 		"server_url": func() *url.URL {
 			return loader.ServerURL
 		},
+		"int_range": func(start, end int64) []int64 {
+			n := end - start
+			result := make([]int64, n)
+			var i int64
+			for i = 0; i < n; i++ {
+				result[i] = start + i
+			}
+			return result
+		},
 	}
 	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(string(tmplBytes))
 	if err != nil {

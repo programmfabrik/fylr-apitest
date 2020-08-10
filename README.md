@@ -1563,6 +1563,9 @@ As an example, the URL _http://localhost/myimage.jpg_ would be changed into _htt
 # HTTP Server
 
 The apitest tool includes an HTTP Server. It can be used to serve files from the local disk temporarily. The HTTP Server can run in test mode. In this mode, the apitest tool does not run any tests, but starts the HTTP Server in the foreground, until CTRL-C in pressed.
+It is possible to define a proxy in the server which would accept and store request data.
+It is useful if there is need to test that expected webhook calls are properly performed.
+Different stores can be configured within the proxy.
 
 To configure a HTTP Server, the manifest need to include these lines:
 
@@ -1571,7 +1574,12 @@ To configure a HTTP Server, the manifest need to include these lines:
     "http_server": {
         "addr": ":8788", // address to listen on
         "dir": "", // directory to server, relative to the manifest.json, defaults to "."
-        "testmode": false // boolean flag to switch test mode on / off
+        "testmode": false, // boolean flag to switch test mode on / off
+        "proxy": { // proxy configuration
+            "test": { // proxy store configuration
+                "mode": "passthru" // proxy store mode
+            }
+        }
     }
 }
 ```
@@ -1701,5 +1709,102 @@ will return this response:
             }
         }
     }
+}
+```
+
+## HTTP Server Proxy
+
+The proxy different stores can be used to both store and read their stored requests
+
+### Write to proxy store
+
+Whatever request performed against the server path `/proxy/<store_name>`.
+Where `<store_name>` are the keys inside the `proxy` object in the server configuration.
+The expected response will have `200` status code and no body.
+
+Given this request:
+```yaml
+{
+    "endpoint": "/proxy/test",
+    "method": "POST",
+    "query_params": {
+        "some": "param"
+    },
+    "header": {
+        "X-My-Header": 0
+    },
+    "body": {
+        "post": {
+            "my": ["body", "here"]
+        }
+    }
+}
+```
+
+The expected response: 
+```yaml
+{
+    "statuscode": 200
+}
+```
+
+### Read from proxy store
+
+Whatever request performed against the server path `/proxystore/<store_name>?offset=<offset>&limit=<limit>`.
+Where:
+- `<store_name>` is a key inside the `proxy` object in the server configuration, aka the proxy store name
+- `<offset>` represents the first entry to be retrieved in the proxy store requests collection.
+- `<limit>` represents the maximum amount of entries to be retrieved from the proxy store.
+
+Given this request:
+```yaml
+{
+    "endpoint": "/proxystore/test",
+    "method": "GET",
+    "query_params": {
+        "offset": 0,
+        "limit": 2
+    }
+}
+```
+
+The expected response: 
+```yaml
+{
+     "mode": "passthru", // The mode the proxy store runs on
+     "offset": 0, // Offset requested
+     "next_offset": 2, // Next offset, as the current offset + limit or 0 if reached max entries
+     "limit": 2, // Limit requested
+     "count": 20, // Total number of requests recorded in this proxy store
+     "store": [
+           {
+                "offset": 0, // The offset for this request entry
+                "request": {
+                       "method": "POST", // The method of this request to the proxy store
+                       "header": { // The headers of this request to the proxy store
+                           "X-My-Header": ["blah"]
+                       }
+                       "query": { // The query string parameters of this request to the proxy store
+                           "nolimit": [true]
+                       }
+                       "body": { // The body of this request to the proxy store
+                           "whatever": ["is", "here"]
+                       }
+                 },
+                 "response": { // The response the proxy delivered (so far onlt 200 status code)
+                        "statuscode": 200
+                 }
+           },
+           {
+                "offset": 1,
+                "request": {
+                       ...
+                 },
+                 "response": {
+                        "statuscode": 200
+                 }
+           },
+           ...
+     ]
 }
 ```

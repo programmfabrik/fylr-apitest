@@ -36,6 +36,9 @@ func (ats *Suite) StartHttpServer() {
 	// bounce binary response with information in headers
 	mux.HandleFunc("/bounce", bounceBinary)
 
+	// Start listening into proxy
+	ats.HttpServer.Proxy.Listen(mux, "/proxy")
+
 	ats.httpServer = http.Server{
 		Addr:    ats.HttpServer.Addr,
 		Handler: mux,

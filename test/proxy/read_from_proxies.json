@@ -1,0 +1,109 @@
+[
+    {{ range $i := int_range 0 10 }}
+        {{ if gt $i 0 }},{{ end }}
+        {{ $offset := multiply $i 10 }}
+        {{ $nextOffset := add $offset 10 }}
+        {
+            "name": "Read requests from proxy 'test' store, from {{ $offset }} to {{ $nextOffset }}",
+            "request": {
+                "server_url": "{{ datastore "req_base_url" }}",
+                "endpoint": "proxystore/test",
+                "method": "GET",
+                "query_params": {
+                    "offset": "{{ $offset }}",
+                    "limit": "10"
+                }
+            },
+            "response": {
+                "statuscode": 200,
+                "body": {
+                    "mode": "passthru",
+                    "offset": {{ $offset }},
+                    "next_offset": {{ $nextOffset }},
+                    "limit": 10,
+                    "count": 100,
+                    "store": [
+                        {{ range $j := int_range $offset $nextOffset }}
+                            {{ if gt $j $offset }},{{ end }}
+                            {
+                                "offset": {{ $j }},
+                                "request": {
+                                    "method": "POST",
+                                    "query": {
+                                        "some": ["value"]
+                                    },
+                                    "header": {
+                                        "X-Some": ["x-header"]
+                                    },
+                                    "body": {
+                                        "some": [
+                                            "body", "here"
+                                        ],
+                                        "index": "idx_{{ $j }}"
+                                    }
+                                },
+                                "response": {
+                                    "statuscode": 200
+                                }
+                            }
+                        {{ end }}
+                    ],
+                    "store:control": {
+                        "no_extra": true,
+                        "order_matters": true,
+                        "element_count": 10
+                    }
+                }
+            }
+        },
+        {
+            "name": "Read requests from proxy 'test2' store, from {{ $offset }} to {{ $nextOffset }}",
+            "request": {
+                "server_url": "{{ datastore "req_base_url" }}",
+                "endpoint": "proxystore/test2",
+                "method": "GET",
+                "query_params": {
+                    "offset": "{{ $offset }}",
+                    "limit": "10"
+                }
+            },
+            "response": {
+                "statuscode": 200,
+                "body": {
+                    "mode": "passthru",
+                    "offset": {{ $offset }},
+                    "next_offset": {{ $nextOffset }},
+                    "limit": 10,
+                    "count": 100,
+                    "store": [
+                        {{ range $j := int_range $offset $nextOffset }}
+                            {{ if gt $j $offset }},{{ end }}
+                            {
+                                "offset": {{ $j }},
+                                "request": {
+                                    "method": "GET",
+                                    "query": {
+                                        "some": ["value"],
+                                        "my": ["data_{{ $j }}"],
+                                        "is": ["here"]
+                                    },
+                                    "header": {
+                                        "X-Some": ["x-header"]
+                                    }
+                                },
+                                "response": {
+                                    "statuscode": 200
+                                }
+                            }
+                        {{ end }}
+                    ],
+                    "store:control": {
+                        "no_extra": true,
+                        "order_matters": true,
+                        "element_count": 10
+                    }
+                }
+            }
+        }
+    {{ end }}
+]

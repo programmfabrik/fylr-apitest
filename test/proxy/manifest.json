@@ -1,0 +1,24 @@
+{{ $local_port:=":9999"}}
+{
+    "http_server": {
+        "addr": "{{ $local_port }}",
+        "dir": "../_res/assets",
+        "testmode": false,
+        "proxy": {
+            "test": {
+                "mode": "passthru"
+            },
+            "test2": {
+                "mode": "passthru"
+            }
+        }
+    },
+    "store": {
+        "req_base_url": "http://localhost{{ $local_port }}"
+    },
+    "name": "Proxy Store tests",
+    "tests": [
+        "@write_to_proxies.json",
+        "@read_from_proxies.json"
+    ]
+}

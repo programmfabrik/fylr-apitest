@@ -1,0 +1,49 @@
+[
+    {{ range $i := int_range 0 100 }}
+        {{ if gt $i 0 }},{{ end }}
+        {
+            "name": "Add requests to proxy 'test'",
+            "request": {
+                "server_url": "{{ datastore "req_base_url" }}",
+                "endpoint": "proxy/test",
+                "method": "POST",
+                "query_params": {
+                    "some": "value"
+                },
+                "header": {
+                    "X-Some": "x-header"
+                },
+                "body": {
+                    "some": [
+                        "body", "here"
+                    ],
+                    "index": "idx_{{ $i }}"
+                }
+            },
+            "response": {
+                "statuscode": 200
+            }
+        }
+    {{ end }}
+    {{ range $i := int_range 0 100 }}
+        ,{
+            "name": "Add requests to proxy 'test2'",
+            "request": {
+                "server_url": "{{ datastore "req_base_url" }}",
+                "endpoint": "proxy/test2",
+                "method": "GET",
+                "query_params": {
+                    "some": "value",
+                    "my": "data_{{ $i }}",
+                    "is": "here"
+                },
+                "header": {
+                    "X-Some": "x-header"
+                }
+            },
+            "response": {
+                "statuscode": 200
+            }
+        }
+    {{ end }}
+]
