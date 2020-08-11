@@ -1808,3 +1808,33 @@ The expected response:
      ]
 }
 ```
+
+# SMTP Server
+
+The apitest tool includes an SMTP Server. It can be used to accept emails and store their content temporarily. The SMTP Server can run in test mode. In this mode, the apitest tool does not run any tests, but starts the SMTP Server in the foreground, until CTRL-C in pressed.
+It is possible to define a proxy in the server which would store mail data.
+It is useful if there is need to test that expected emails are properly delivered.
+Different stores can be configured within the proxy (so far mails are stored in all of them).
+
+To configure a SMTP Server, the manifest need to include these lines:
+
+```yaml
+{
+    "smtp_server": {
+        "auth": {
+            "username", // login
+            "password"
+        },
+        "addr": ":8788", // address to listen on
+        "testmode": false, // boolean flag to switch test mode on / off
+        "proxy": { // proxy configuration
+            "test": { // proxy store configuration
+                "mode": "passthru" // proxy store mode
+            }
+        }
+    }
+}
+```
+
+The SMTP Server is started and stopped per test.
+To read from (or even write to) the SMTP proxy, proceed as defined in [HTTP Server Proxy](#http-server-proxy) section.

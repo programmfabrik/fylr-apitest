@@ -56,14 +56,23 @@ type HTTPServerProxyStoreResponse struct {
 }
 
 // HTTPServerProxy definition
-type HTTPServerProxy map[string]HTTPServerProxyStore
+type HTTPServerProxy map[string]*HTTPServerProxyStore
 
 // Listen for the proxy store/retrieve
 func (proxy *HTTPServerProxy) Listen(mux *http.ServeMux, prefix string) {
 	for p, s := range *proxy {
-		store := HTTPServerProxyStore{Name: p, Mode: s.Mode, Data: []HTTPServerProxyStoreDataEntry{}}
+		store := &HTTPServerProxyStore{Name: p, Mode: s.Mode, Data: []HTTPServerProxyStoreDataEntry{}}
 		mux.HandleFunc(fmt.Sprintf("%s/%s", prefix, p), store.write)
 		mux.HandleFunc(fmt.Sprintf("%sstore/%s", prefix, p), store.read)
+		(*proxy)[p] = store
+	}
+}
+
+// addEntryToStore adds an entry to a named proxy store
+func (proxy *HTTPServerProxy) addEntryToStore(name string, entry HTTPServerProxyStoreDataEntry) {
+	store, ok := (*proxy)[name]
+	if ok {
+		store.addEntry(entry)
 	}
 }
 
@@ -89,12 +98,18 @@ func (store *HTTPServerProxyStore) write(w http.ResponseWriter, r *http.Request)
 
 	offset := len(store.Data)
 
-	store.Data = append(store.Data, HTTPServerProxyStoreDataEntry{offset, reqData, resData})
+	store.addEntry(HTTPServerProxyStoreDataEntry{offset, reqData, resData})
 
 	w.WriteHeader(resData.StatusCode)
 	if resData.Body != nil {
 		json.NewEncoder(w).Encode(resData.Body)
 	}
+}
+
+// addEntry into proxy store
+func (store *HTTPServerProxyStore) addEntry(entry HTTPServerProxyStoreDataEntry) {
+	entry.Offset = len(store.Data)
+	store.Data = append(store.Data, entry)
 }
 
 // read reads existing requests stored data

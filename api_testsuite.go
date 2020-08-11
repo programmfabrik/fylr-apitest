@@ -187,6 +187,8 @@ func (ats *Suite) Run() bool {
 		logrus.WithFields(logrus.Fields{"elapsed": elapsed.Seconds()}).Warnf("[%2d] failure", ats.index)
 	}
 
+	ats.StopSMTPServer()
+
 	ats.StopHttpServer()
 
 	return success

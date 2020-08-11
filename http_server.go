@@ -39,6 +39,11 @@ func (ats *Suite) StartHttpServer() {
 	// Start listening into proxy
 	ats.HttpServer.Proxy.Listen(mux, "/proxy")
 
+	// Add SMTP proxy if defined
+	if ats.SMTPServer != nil {
+		ats.SMTPServer.Proxy.Listen(mux, "/proxy")
+	}
+
 	ats.httpServer = http.Server{
 		Addr:    ats.HttpServer.Addr,
 		Handler: mux,
