@@ -168,6 +168,21 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         "testmode": false
     },
 
+    // Optional temporary SMTP Server (see below)
+     "smtp_server": {
+        "auth": {
+            "username": "root",
+            "password": "admin"
+        },
+        "addr": ":8788",
+        "testmode": false,
+        "proxy": {
+            "smtp": {
+                "mode": "passthru"
+            }
+        }
+    }   
+
     // Specify a unique log behavior only for this single test.
     "log_network": true,
     "log_verbose": false,
@@ -287,6 +302,18 @@ Manifest is loaded as **template**, so you can use variables, Go **range** and *
         "@continue_response_pending.json",
         "@continue_response_processing.json"
     ],
+
+    // Simple email delivery. Test will fail if target server is not reachable
+    "send_email": {
+        "auth": {
+            "username": "root",
+            "password": "admin"
+        },
+        "addr": "mail.wherever:143",
+        "sender": "me@my.place",
+        "recipients": ["oneguy@got.it", "theotherguy@.got.too"],
+        "body": "Im the mighty mail body."
+    },
 
     // If set to true, the test case will consider its failure as a success, and the other way around
     "reverse_test_result": false
@@ -1822,13 +1849,13 @@ To configure a SMTP Server, the manifest need to include these lines:
 {
     "smtp_server": {
         "auth": {
-            "username", // login
-            "password"
+            "username" : "root", // login
+            "password": "admin"
         },
         "addr": ":8788", // address to listen on
         "testmode": false, // boolean flag to switch test mode on / off
         "proxy": { // proxy configuration
-            "test": { // proxy store configuration
+            "smtp": { // proxy store configuration
                 "mode": "passthru" // proxy store mode
             }
         }
