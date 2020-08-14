@@ -1611,6 +1611,9 @@ To configure a HTTP Server, the manifest need to include these lines:
 }
 ```
 
+The proxy `mode` parameter supports these values:
+- `passthru` : The request is stored as it is, without further processing
+
 The HTTP Server is started and stopped per test.
 
 ## HTTP Endpoints
@@ -1742,12 +1745,34 @@ will return this response:
 ## HTTP Server Proxy
 
 The proxy different stores can be used to both store and read their stored requests
+The configuration, as already defined in [HTTP Server](#http-server), is as follows:
+
+```
+"proxy": { // proxy configuration
+    "<store_name>": { // proxy store configuration
+        "mode": "passthru" // proxy store mode
+    }
+}
+```
+
+| Key            | Value Type     | Value description                                                        |
+|----------------|----------------|--------------------------------------------------------------------------|
+| proxy          | JSON Object    | An object with the store names as keys and their configuration as values |
+| <store_name>   | JSON Object    | An object with the store configuration                                   |
+| mode           | string         | The mode the store runs on (see below)                                   |
+
+Store modes:
+
+| Value        | Description                                                                            |
+|--------------|----------------------------------------------------------------------------------------|
+| passthru     |  The request to the proxy store will be stored as it is without any further processing |
+
 
 ### Write to proxy store
 
-Whatever request performed against the server path `/proxy/<store_name>`.
-Where `<store_name>` are the keys inside the `proxy` object in the server configuration.
-The expected response will have `200` status code and no body.
+Perform a request against the http server path `/proxy/<store_name>`.
+Where `<store_name>` is a key (store name) inside the `proxy` object in the configuration.
+The expected response will have wither `200` status code and no body or another status and an error body.
 
 Given this request:
 ```yaml
@@ -1808,6 +1833,7 @@ The expected response:
                 "offset": 0, // The offset for this request entry
                 "request": {
                        "method": "POST", // The method of this request to the proxy store
+                       "path": "", // The url path requested (including query string)
                        "header": { // The headers of this request to the proxy store
                            "X-My-Header": ["blah"]
                        }
@@ -1818,7 +1844,7 @@ The expected response:
                            "whatever": ["is", "here"]
                        }
                  },
-                 "response": { // The response the proxy delivered (so far onlt 200 status code)
+                 "response": { // The response the proxy delivered (will only contain an error body if statuscode is not 200)
                         "statuscode": 200
                  }
            },

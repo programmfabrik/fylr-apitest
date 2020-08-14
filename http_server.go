@@ -37,7 +37,8 @@ func (ats *Suite) StartHttpServer() {
 	mux.HandleFunc("/bounce", bounceBinary)
 
 	// Start listening into proxy
-	ats.HttpServer.Proxy.Listen(mux, "/proxy")
+	ats.httpServerProxy = NewProxy(ats.HttpServer.Proxy)
+	ats.httpServerProxy.Listen(mux, "/proxy")
 
 	// Add SMTP proxy if defined
 	if ats.SMTPServer != nil {

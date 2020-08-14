@@ -29,6 +29,7 @@
                                 "offset": {{ $j }},
                                 "request": {
                                     "method": "POST",
+                                    "path": "/proxy/test?some=value",
                                     "query": {
                                         "some": ["value"]
                                     },
@@ -82,6 +83,7 @@
                                 "offset": {{ $j }},
                                 "request": {
                                     "method": "GET",
+                                    "path": "/proxy/test2?is=here&my=data_{{ $j }}&some=value",
                                     "query": {
                                         "some": ["value"],
                                         "my": ["data_{{ $j }}"],
