@@ -41,8 +41,8 @@ func (ats *Suite) StartHttpServer() {
 	ats.httpServerProxy.Listen(mux, "/proxy")
 
 	// Add SMTP proxy if defined
-	if ats.SMTPServer != nil {
-		ats.SMTPServer.Proxy.Listen(mux, "/proxy")
+	if ats.smtpServer != nil {
+		ats.smtpServer.Proxy.Listen(mux, "/proxy")
 	}
 
 	ats.httpServer = http.Server{
@@ -81,7 +81,7 @@ func customStaticHandler(h http.Handler) http.HandlerFunc {
 		noContentLengthHeader := qs.Get("no-content-length")
 		if noContentLengthHeader == "1" || noContentLengthHeader == "true" {
 			w.Header().Set("Content-Encoding", "identity")
-		} 
+		}
 		h.ServeHTTP(w, r)
 	}
 }

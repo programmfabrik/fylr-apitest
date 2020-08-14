@@ -21,10 +21,18 @@ type SMTPAuth struct {
 
 // SMTPServer definition
 type SMTPServer struct {
+	*smtp.Server
 	Addr     string          `json:"addr"`
 	Auth     SMTPAuth        `json:"auth"`
 	Testmode bool            `json:"testmode"`
 	Proxy    HTTPServerProxy `json:"proxy"`
+}
+
+// NewSMTPServer allocates a new smtp server from its configuration
+func NewSMTPServer(cfg SMTPServer) *SMTPServer {
+	server := new(SMTPServer)
+	*server = cfg
+	return server
 }
 
 // StartSMTPServer start a simple smtp server that can receive emails during the testsuite is running
@@ -41,23 +49,24 @@ func (ats *Suite) StartSMTPServer() {
 		return
 	}
 
-	ats.smtpServer = smtp.NewServer(ats.SMTPServer)
+	ats.smtpServer = NewSMTPServer(*ats.SMTPServer)
+	ats.smtpServer.Server = smtp.NewServer(ats.smtpServer)
 
 	address := util.PolyfillLocalhost(ats.SMTPServer.Addr)
 	addrSplit := strings.Split(address, ":")
 	addr := fmt.Sprintf(":%s", addrSplit[1])
 
-	ats.smtpServer.Addr = addr
-	ats.smtpServer.Domain = addrSplit[0]
-	ats.smtpServer.ReadTimeout = 600 * time.Second
-	ats.smtpServer.WriteTimeout = 600 * time.Second
-	ats.smtpServer.MaxMessageBytes = 128 * 1024 * 1024
-	ats.smtpServer.MaxRecipients = 100
-	ats.smtpServer.AllowInsecureAuth = true
+	ats.smtpServer.Server.Addr = addr
+	ats.smtpServer.Server.Domain = addrSplit[0]
+	ats.smtpServer.Server.ReadTimeout = 600 * time.Second
+	ats.smtpServer.Server.WriteTimeout = 600 * time.Second
+	ats.smtpServer.Server.MaxMessageBytes = 128 * 1024 * 1024
+	ats.smtpServer.Server.MaxRecipients = 100
+	ats.smtpServer.Server.AllowInsecureAuth = true
 
 	run := func() {
 		logrus.Infof("Starting SMTP Server: %s%s", ats.smtpServer.Domain, ats.smtpServer.Addr)
-		err := ats.smtpServer.ListenAndServe()
+		err := ats.smtpServer.Server.ListenAndServe()
 		if err != nil {
 			// Error starting listener:
 			logrus.Errorf("SMTP server ListenAndServe: %v", err)
@@ -81,7 +90,7 @@ func (ats *Suite) StopSMTPServer() {
 		return
 	}
 
-	ats.smtpServer.Close()
+	ats.smtpServer.Server.Close()
 }
 
 // Login handles a login command with username and password.
@@ -99,7 +108,7 @@ func (s *SMTPServer) AnonymousLogin(state *smtp.ConnectionState) (smtp.Session, 
 
 // A SMTPSession is returned after successful login.
 type SMTPSession struct {
-	Server *SMTPServer
+	Server   *SMTPServer
 	LastMail Email
 }
 
@@ -119,26 +128,26 @@ func (s *SMTPSession) Rcpt(to string) error {
 
 // Data received from mail
 func (s *SMTPSession) Data(r io.Reader) error {
-	
+
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err
 	}
 	s.LastMail.Body = string(b)
 	// Aparently an extra single new line is inserted at the end somehow?
-	s.LastMail.Body = s.LastMail.Body[:len(s.LastMail.Body)-1] 
+	s.LastMail.Body = s.LastMail.Body[:len(s.LastMail.Body)-1]
 
 	logrus.Debugf("Data: %s", string(b))
 
 	reqData := HTTPServerProxyStoreRequestData{
 		Method: "MAIL",
-		Body: s.LastMail,
+		Body:   s.LastMail,
 	}
 	resData := HTTPServerProxyStoreResponseData{}
 
 	// TODO: Way to organize them? By sender? Would we know it?
 	for p := range s.Server.Proxy {
-		s.Server.Proxy.addEntryToStore(p,HTTPServerProxyStoreDataEntry{0, reqData, resData})
+		s.Server.Proxy.addEntryToStore(p, HTTPServerProxyStoreDataEntry{0, reqData, resData})
 	}
 
 	return nil

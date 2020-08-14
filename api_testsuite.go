@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/emersion/go-smtp"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -51,7 +50,7 @@ type Suite struct {
 	httpServerDir   string
 	idleConnsClosed chan struct{}
 	HTTPServerHost  string
-	smtpServer      *smtp.Server
+	smtpServer      *SMTPServer
 }
 
 // NewTestSuite creates a new suite on which we execute our tests on. Normally this only gets call from within the apitest main command
@@ -163,9 +162,10 @@ func (ats *Suite) Run() bool {
 	r := ats.reporterRoot
 	logrus.Infof("[%2d] '%s'", ats.index, ats.Name)
 
-	ats.StartHttpServer()
-
+	// Important!!! this one needs to start before, as we may need to assign http routes to its proxy
 	ats.StartSMTPServer()
+
+	ats.StartHttpServer()
 
 	start := time.Now()
 
