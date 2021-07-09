@@ -30,22 +30,22 @@
                                 }
                             },
                             "xmlns:Composite": {
-                                "#text": "http://ns.exiftool.org/Composite/1.0/"
+                                "#text": "http://ns.exiftool.ca/Composite/1.0/"
                             },
                             "xmlns:ExifTool": {
-                                "#text": "http://ns.exiftool.org/ExifTool/1.0/"
+                                "#text": "http://ns.exiftool.ca/ExifTool/1.0/"
                             },
                             "xmlns:File": {
-                                "#text": "http://ns.exiftool.org/File/1.0/"
+                                "#text": "http://ns.exiftool.ca/File/1.0/"
                             },
                             "xmlns:ICC_Profile": {
-                                "#text": "http://ns.exiftool.org/ICC_Profile/ICC_Profile/1.0/"
+                                "#text": "http://ns.exiftool.ca/ICC_Profile/ICC_Profile/1.0/"
                             },
                             "xmlns:JFIF": {
-                                "#text": "http://ns.exiftool.org/JFIF/JFIF/1.0/"
+                                "#text": "http://ns.exiftool.ca/JFIF/JFIF/1.0/"
                             },
                             "xmlns:et": {
-                                "#text": "http://ns.exiftool.org/1.0/"
+                                "#text": "http://ns.exiftool.ca/1.0/"
                             }
                         },
                         "Composite:ImageSize": {

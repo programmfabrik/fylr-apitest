@@ -119,6 +119,72 @@ func TestComparison(t *testing.T) {
 			},
 		},
 		{
+			name: "String starts with another string",
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
+					"starts_with": "123.",
+					"is_string":   true,
+				},
+			},
+			right: util.JsonObject{
+				"stringerino": "123.abc",
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "String does not start with another string",
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
+					"starts_with": "789.",
+					"is_string":   true,
+				},
+			},
+			right: util.JsonObject{
+				"stringerino": "123.abc",
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "stringerino",
+					Message: "does not start with '789.'",
+				},
+			},
+		},
+		{
+			name: "String ends with another string",
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
+					"ends_with": ".abc",
+					"is_string": true,
+				},
+			},
+			right: util.JsonObject{
+				"stringerino": "123.abc",
+			},
+			eEqual:    true,
+			eFailures: nil,
+		},
+		{
+			name: "String does not end with another string",
+			left: util.JsonObject{
+				"stringerino:control": util.JsonObject{
+					"ends_with": ".xyz",
+					"is_string": true,
+				},
+			},
+			right: util.JsonObject{
+				"stringerino": "123.abc",
+			},
+			eEqual: false,
+			eFailures: []CompareFailure{
+				{
+					Key:     "stringerino",
+					Message: "does not end with '.xyz'",
+				},
+			},
+		},
+		{
 			name: "There should be any number",
 			left: util.JsonObject{
 				"numberino:control": util.JsonObject{

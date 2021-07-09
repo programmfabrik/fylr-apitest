@@ -1,0 +1,171 @@
+[
+    {
+        "name": "check control starts_with and ends_with",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "_files": [
+                    {
+                        "path": "Test XML+CSV+JSON/1-2.csv"
+                    },
+                    {
+                        "path": "Test XML+CSV+JSON/1-2.json"
+                    },
+                    {
+                        "path": "files/no-1-sid-10-berlin.jpg"
+                    },
+                    {
+                        "path": "files/no-2-sid-10-mona-lisa-1.jpg"
+                    },
+                    {
+                        "path": "files/no-3-sid-9-Gustav_Klimt_016.jpg"
+                    },
+                    {
+                        "path": "files/no-4-sid-9-art-exposition-735518_1920_big_small.png"
+                    },
+                    {
+                        "path": "files/so-henk-was-here_small.png"
+                    }
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "_files": [
+                        {
+                            "path:control": {
+                                "starts_with": "Test XML+CSV+JSON",
+                                "ends_with": "csv"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "starts_with": "Test XML+CSV+JSON",
+                                "ends_with": "json"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "starts_with": "files",
+                                "ends_with": "berlin.jpg"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "starts_with": "files",
+                                "ends_with": "lisa-1.jpg"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "starts_with": "files",
+                                "ends_with": "Klimt_016.jpg"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "starts_with": "files",
+                                "ends_with": "big_small.png"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "starts_with": "files",
+                                "ends_with": "here_small.png"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "name": "check control starts_with and ends_with (reverse test, expect failure for all controls)",
+        "request": {
+            "server_url": "http://localhost:9999",
+            "endpoint": "bounce-json",
+            "method": "POST",
+            "body": {
+                "_files": [
+                    {
+                        "path": "Test XML+CSV+JSON/1-2.csv"
+                    },
+                    {
+                        "path": "Test XML+CSV+JSON/1-2.json"
+                    },
+                    {
+                        "path": "files/no-1-sid-10-berlin.jpg"
+                    },
+                    {
+                        "path": "files/no-2-sid-10-mona-lisa-1.jpg"
+                    },
+                    {
+                        "path": "files/no-3-sid-9-Gustav_Klimt_016.jpg"
+                    },
+                    {
+                        "path": "files/no-4-sid-9-art-exposition-735518_1920_big_small.png"
+                    },
+                    {
+                        "path": "files/so-henk-was-here_small.png"
+                    }
+                ]
+            }
+        },
+        "response": {
+            "statuscode": 200,
+            "body": {
+                "body": {
+                    "_files": [
+                        {
+                            "path:control": {
+                                "starts_with": "xxx",
+                                "ends_with": "xxx"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "starts_with": "xxx",
+                                "ends_with": "xxx"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "starts_with": "xxx",
+                                "ends_with": "xxx"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "starts_with": "xxx",
+                                "ends_with": "xxx"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "starts_with": "xxx",
+                                "ends_with": "xxx"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "starts_with": "xxx",
+                                "ends_with": "xxx"
+                            }
+                        },
+                        {
+                            "path:control": {
+                                "starts_with": "xxx",
+                                "ends_with": "xxx"
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "reverse_test_result": true
+    }
+]

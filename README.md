@@ -960,6 +960,58 @@ Check if a string value matches a given [regular expression](https://gobyexample
 }
 ```
 
+### `starts_with`
+
+Check if a string value starts with a given string prefix
+
+#### expected string response checked with prefx
+
+```yaml
+{
+    "body": {
+        "text:control": {
+            "starts_with": "abc-"
+        }
+    }
+}
+```
+
+#### actual response
+
+```yaml
+{
+    "body": {
+        "text": "abc-123"
+    }
+}
+```
+
+### `ends_with`
+
+Check if a string value ends with a given string suffix
+
+#### expected string response checked with suffix
+
+```yaml
+{
+    "body": {
+        "text:control": {
+            "ends_with": "-123"
+        }
+    }
+}
+```
+
+#### actual response
+
+```yaml
+{
+    "body": {
+        "text": "abc-123"
+    }
+}
+```
+
 ### Type checkers
 
 With `is_string`, `is_bool`, `is_object`, `is_array` and `is_number` you can check if your field has a certain type
@@ -1757,6 +1809,12 @@ As an example, the URL _http://localhost/myimage.jpg_ would be changed into _htt
 ## `server_url`
 
 **server_url** returns the server url, which can be globally provided in the config file or directly by the command line parameter `--server`. This is a `*url.URL`.
+
+## server_url_no_user
+
+**server_url_no_user** returns the server url, which can be globally provided in the config file or directly by the command line parameter `--server`. Any information about the user authentification is removed. This is a `*url.URL`.
+
+If the **server_url** is in the form of _http://user:password@localhost_, **server_url_no_user** will return _http://localhost_.
 
 ## `is_zero`
 

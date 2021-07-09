@@ -28,6 +28,8 @@ type ComparisonContext struct {
 	numberLT       *util.JsonNumber
 	numberLE       *util.JsonNumber
 	regexMatch     *util.JsonString
+	startsWith     *util.JsonString
+	endsWith       *util.JsonString
 }
 
 func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err error) {
@@ -89,6 +91,22 @@ func fillComparisonContext(in util.JsonObject) (out *ComparisonContext, err erro
 
 			}
 			out.regexMatch = &tV
+		case "starts_with":
+			tV, ok := v.(string)
+			if !ok || tV == "" {
+				err = fmt.Errorf("starts_with must be a string with length > 0")
+				return
+
+			}
+			out.startsWith = &tV
+		case "ends_with":
+			tV, ok := v.(string)
+			if !ok || tV == "" {
+				err = fmt.Errorf("ends_with must be a string with length > 0")
+				return
+
+			}
+			out.endsWith = &tV
 		case "is_number":
 			tV, ok := v.(bool)
 			if !ok {
@@ -513,7 +531,7 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 	}
 
 	// Check for array length
-	if leftLen := control.elementCount; leftLen != nil {
+	if control.elementCount != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "Array" {
 			return fmt.Errorf("should be 'Array' but is '%s'", jsonType)
@@ -521,8 +539,8 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 
 		rightArray := right.(util.JsonArray)
 		rightLen := int64(len(rightArray))
-		if rightLen != *leftLen {
-			return fmt.Errorf("length of the actual response array '%d' != '%d' expected length", rightLen, *leftLen)
+		if rightLen != *control.elementCount {
+			return fmt.Errorf("length of the actual response array '%d' != '%d' expected length", rightLen, *control.elementCount)
 		}
 	}
 
@@ -553,18 +571,40 @@ func keyChecks(lk string, right interface{}, rOK bool, control ComparisonContext
 	}
 
 	// Check if string matches regex
-	if regex := control.regexMatch; regex != nil {
+	if control.regexMatch != nil {
 		jsonType := getJsonType(right)
 		if jsonType != "String" {
 			return fmt.Errorf("should be 'String' for regex match but is '%s'", jsonType)
 		}
 
-		doesMatch, err := regexp.Match(*regex, []byte(right.(util.JsonString)))
+		doesMatch, err := regexp.Match(*control.regexMatch, []byte(right.(util.JsonString)))
 		if err != nil {
-			return fmt.Errorf("could not match regex '%s': '%s'", *regex, err)
+			return fmt.Errorf("could not match regex '%s': '%s'", *control.regexMatch, err)
 		}
 		if !doesMatch {
-			return fmt.Errorf("does not match regex '%s'", *regex)
+			return fmt.Errorf("does not match regex '%s'", *control.regexMatch)
+		}
+	}
+
+	// Check if string starts or ends with another string
+	if control.startsWith != nil {
+		jsonType := getJsonType(right)
+		if jsonType != "String" {
+			return fmt.Errorf("should be 'String' for starts_with but is '%s'", jsonType)
+		}
+
+		if !strings.HasPrefix(right.(util.JsonString), *control.startsWith) {
+			return fmt.Errorf("does not start with '%s'", *control.startsWith)
+		}
+	}
+	if control.endsWith != nil {
+		jsonType := getJsonType(right)
+		if jsonType != "String" {
+			return fmt.Errorf("should be 'String' for ends_with but is '%s'", jsonType)
+		}
+
+		if !strings.HasSuffix(right.(util.JsonString), *control.endsWith) {
+			return fmt.Errorf("does not end with '%s'", *control.endsWith)
 		}
 	}
 
