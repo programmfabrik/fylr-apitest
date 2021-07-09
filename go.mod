@@ -1,12 +1,13 @@
 module github.com/programmfabrik/apitest
 
-go 1.13
+go 1.16
 
 require (
 	github.com/clbanning/mxj v1.8.4
 	github.com/mattn/go-sqlite3 v1.14.4
 	github.com/moul/http2curl v1.0.0
 	github.com/pkg/errors v0.8.1
+	github.com/programmfabrik/go-csvx v1.0.0
 	github.com/programmfabrik/go-test-utils v0.0.0-20191114143449-b8e16b04adb1
 	github.com/sergi/go-diff v1.0.0
 	github.com/sirupsen/logrus v1.4.2

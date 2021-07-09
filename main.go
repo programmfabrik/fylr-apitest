@@ -16,6 +16,11 @@ import (
 )
 
 var (
+	version = "dev"
+	commit  = "none-commit"
+	date    = "2006-01-02 15:04:05Z07:00"
+	builtBy = "unknown"
+
 	reportFormat, reportFile, serverURL, httpServerReplaceHost              string
 	logNetwork, logDatastore, logVerbose, logTimeStamp, logCurl, stopOnFail bool
 	rootDirectorys, singleTests                                             []string
@@ -85,7 +90,7 @@ func init() {
 	viper.BindPFlag("apitest.limit.request", testCMD.PersistentFlags().Lookup("limit-request"))
 	viper.BindPFlag("apitest.limit.response", testCMD.PersistentFlags().Lookup("limit-response"))
 
-	println("The latest apitest tool, v 68")
+	println("The latest apitest tool, version:", version, "commit:", commit, "date:", date, "builder:", builtBy)
 }
 
 var testCMD = &cobra.Command{

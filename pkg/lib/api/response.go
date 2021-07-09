@@ -17,8 +17,8 @@ import (
 	"github.com/clbanning/mxj"
 	"github.com/pkg/errors"
 
-	"github.com/programmfabrik/apitest/pkg/lib/csv"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
+	"github.com/programmfabrik/go-csvx"
 )
 
 type Response struct {
@@ -134,14 +134,9 @@ func (response Response) ServerResponseToGenericJSON(responseFormat ResponseForm
 			return res, errors.Wrap(err, "Could not marshal xml to json")
 		}
 	case "csv":
-		runeComma := ','
-		if responseFormat.CSV.Comma != "" {
-			runeComma = []rune(responseFormat.CSV.Comma)[0]
-		}
-
-		csvData, err := csv.GenericCSVToMap(resp.Body(), runeComma)
+		csvData, err := csvx.NewCSV(',', '#', true).ToTypedMap(resp.Body())
 		if err != nil {
-			return res, errors.Wrap(err, "Could not parse csv")
+			return res, errors.Wrap(err, "Could not parse csv data")
 		}
 
 		bodyData, err = json.Marshal(csvData)

@@ -1,178 +1,39 @@
-name: release
+name: Release
 
 on:
   push:
-    branches:
-      - "production"
+    tags:
+      - '*'
+      - '**'
 
 jobs:
-  unit-tests:
-    name: unit-tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: run go 1.16
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.16
-  
-      - name: Checkout code
-        uses: actions/checkout@v2
-      
-      - name: execute unit tests
-        shell: bash
-        run: make test
-
-      - name: Notify slack channel about a failure
-        if: ${{ failure() }}
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.K8S_DEPLOYMENT_SLACK_WEBHOOK_URL }}
-          SLACK_CHANNEL: k8s-deployment
-          SLACK_USERNAME: fylr-bot
-          SLACK_ICON: https://avatars.githubusercontent.com/u/1220228?s=200&v=4
-          SLACK_COLOR: "#ff0000"
-          SLACK_MESSAGE: Unit tests failed
-          SLACK_TITLE: Unit tests failed
-          SLACK_FOOTER: ""
-
   release:
+    defaults:
+      run:
+        working-directory: ./
     runs-on: ubuntu-latest
-    needs:
-      - unit-tests
-    outputs:
-      asset_upload_url: ${{ steps.set_url.outputs.asset_upload_url }}
-      version: ${{ steps.bump_version.outputs.tag_version }}
+    env:
+      GOPRIVATE: "github.com/programmfabrik/*"
+      FYLR_BOT_ACCESS_TOKEN: ${{ secrets.FYLR_BOT_PERSONAL_ACCESS_TOKEN }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: init bump
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v5.3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          release_branches: production
-
-      - name: bump version
-        id: bump_version
+      - name: replace https://github.com
         shell: bash
-        run: echo "::set-output name=tag_version::$(echo ${{ steps.tag_version.outputs.new_tag }})"
+        run: git config --global url."https://fylr-bot:$FYLR_BOT_ACCESS_TOKEN@github.com/".insteadOf "https://github.com/"
 
-      - name: create release
-        uses: actions/create-release@v1
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v2
         with:
-          tag_name: ${{ steps.bump_version.outputs.tag_version }}
-          release_name: ${{ steps.bump_version.outputs.tag_version }}
-          body_path: RELEASES.md
-          draft: false
-          prerelease: false
-      
-      - name: set url
-        id: set_url
-        run: echo "::set-output name=asset_upload_url::${{ steps.create_release.outputs.upload_url }}"
+          fetch-depth: 0
 
-      - name: Notify slack channel about a failure
-        if: ${{ failure() }}
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.K8S_DEPLOYMENT_SLACK_WEBHOOK_URL }}
-          SLACK_CHANNEL: k8s-deployment
-          SLACK_USERNAME: fylr-bot
-          SLACK_MSG_AUTHOR: fylr-bot
-          SLACK_ICON: https://avatars.githubusercontent.com/u/1220228?s=200&v=4
-          SLACK_COLOR: "#ff0000"
-          SLACK_MESSAGE: Automated release failed with unknown reason. Please take care of it.
-          SLACK_TITLE: Release ${{ needs.release.outputs.tag_version }} failed
-          SLACK_FOOTER: "Repository: https://github.com/$GITHUB_REPOSITORY"
-
-  upload-asset:
-    runs-on: ubuntu-latest
-    needs:
-      - release
-    strategy:
-      matrix:
-        include:
-          - goos: darwin
-            goarch: amd64
-          - goos: darwin
-            goarch: arm64
-
-          - goos: linux
-            goarch: 386
-          - goos: linux
-            goarch: amd64
-          - goos: linux
-            goarch: arm
-          - goos: linux
-            goarch: arm64
-          - goos: linux
-            goarch: mips
-          - goos: linux
-            goarch: mips64
-
-          - goos: windows
-            goarch: 386
-          - goos: windows
-            goarch: amd64
-          - goos: windows
-            goarch: arm
-    steps:
-      - name: run go 1.16
-        uses: actions/setup-go@v1
+      - name: Set up Go
+        uses: actions/setup-go@v2
         with:
           go-version: 1.16
 
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: build binary
-        shell: bash
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-        run: make ci
-
-      - name: upload asset
-        id: upload-release-asset 
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run goreleaser
+        uses: goreleaser/goreleaser-action@v2
         with:
-          upload_url: ${{ needs.release.outputs.asset_upload_url }}
-          asset_path: bin/apitest_${{ matrix.goos }}_${{ matrix.goarch }}
-          asset_name: apitest_${{ matrix.goos }}_${{ matrix.goarch }}
-          asset_content_type: application/octet-stream
-
-  notify-slack:
-    runs-on: ubuntu-latest
-    needs:
-      - release
-      - upload-asset
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: set body message
-        id: body_message
-        run: echo "::set-output name=slack_body_message::$(cat RELEASES.md)"
-
-      - name: set title
-        id: title_message
-        run: echo "::set-output name=slack_title_message::Released a new version ${{ needs.release.outputs.version }}"
-
-      - name: Notify slack channel about the release
-        if: ${{ success() }}
-        uses: rtCamp/action-slack-notify@v2
+          version: latest
+          args: release --rm-dist
         env:
-          SLACK_WEBHOOK: ${{ secrets.K8S_DEPLOYMENT_SLACK_WEBHOOK_URL }}
-          SLACK_CHANNEL: k8s-deployment
-          SLACK_USERNAME: fylr-bot
-          SLACK_MSG_AUTHOR: fylr-bot
-          SLACK_ICON: https://avatars.githubusercontent.com/u/1220228?s=200&v=4
-          SLACK_COLOR: "#00ff00"
-          SLACK_MESSAGE: ${{ steps.body_message.outputs.slack_body_message }}
-          SLACK_TITLE: ${{ steps.title_message.outputs.slack_title_message }}
-          SLACK_FOOTER: ""
+          GITHUB_TOKEN: ${{ secrets.FYLR_BOT_PERSONAL_ACCESS_TOKEN }}

@@ -1,0 +1,39 @@
+before:
+  hooks:
+    - go get ./...
+
+builds:
+  - id: standard-build
+    flags:
+      - -tags=prod
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=programmfabrik
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+    binary: apitest
+
+archives:
+  - format: binary
+
+release:
+  draft: true
+  prerelease: auto
+  name_template: "apitest-{{.Tag}}"
+
+checksum:
+  disable: true
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^typo:'
+      - '^ci:'
+      - '^cd:'
+      - '^ci/cd:'

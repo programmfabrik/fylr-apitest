@@ -3,6 +3,7 @@ package template
 import (
 	"fmt"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/programmfabrik/apitest/pkg/lib/api"
 	"github.com/programmfabrik/apitest/pkg/lib/filesystem"
 	go_test_utils "github.com/programmfabrik/go-test-utils"
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/spf13/afero"
 )
 
@@ -118,150 +118,62 @@ func TestRender_LoadFile_QJson_Params(t *testing.T) {
 }
 
 func TestRender_LoadFile_CSV(t *testing.T) {
-	testCases := []struct {
-		csv         string
-		expected    string
-		expectedErr error
-	}{
-		{`id,name,friends,ages
-int64,string,"string,array","int64,array"
-1,simon,"simon,jonas,stefan","21,24,12"`, `[{"ages":[21,24,12],"friends":["simon","jonas","stefan"],"id":1,"name":"simon"}]`, nil},
-		{`id,name,friends,ages
-
-int64,string,"string,array","int64,array"
-
-,,,
-1,simon,"simon,jonas,stefan","21,24,12"`, `[{"ages":[21,24,12],"friends":["simon","jonas","stefan"],"id":1,"name":"simon"}]`, nil},
-		{`id,name,friends,ages
-
-int64,string,"string,array","int64,array"
-
-,,,
-,hans,,
-1,simon,"simon,jonas,stefan","21,24,12"`, `[{"ages":[],"friends":[],"id":0,"name":"hans"},{"ages":[21,24,12],"friends":["simon","jonas","stefan"],"id":1,"name":"simon"}]`, nil},
-		{`id,name,friends,ages
-
-int64,string,"string,array","int64,array"
-
-,,,
-,hans,,
-1,simon,"simon,jo
-nas,ste
-fan","21,24,12"`, ``, fmt.Errorf(`error executing template: template: tmpl:1:3: executing "tmpl" at <file_csv "somefile.json" ','>: error calling file_csv: 'somefile.json' Only one row is allowed for type 'string,array'`)},
-
-		{`id,name,friends,ages
-
-int64,string,"string,array","int64,array"
-
-,,,
-#,hans,,
-1,simon,"simon,""jo
-nas"",""a,b""","21,24,12"`, `[{"ages":[21,24,12],"friends":["simon","jo\nnas","a,b"],"id":1,"name":"simon"}]`, nil},
-		{`id,name,friends,ages
-
-int64,string,"string,array"
-
-,,,
-#,hans,,
-1,simon,"simon,""jo
-nas"",""a,b""","21,24,12"`, `[{"friends":["simon","jo\nnas","a,b"],"id":1,"name":"simon"}]`, nil},
-		{`id,name, ,ages
-
-int64,string,"string,array"
-
-,,,
-#,hans,,
-1,simon,"simon,""jo
-nas"",""a,b""","21,24,12"`, `[{"id":1,"name":"simon"}]`, nil},
-		{`id,name,de,friends,ages
-
-int64,string,,"string,array"
-
-,,,
-#,hans,,
-1,simon,LALALALA,"simon,""jo
-nas"",""a,b""","21,24,12"`, `[{"friends":["simon","jo\nnas","a,b"],"id":1,"name":"simon"}]`, nil},
-		{`id,name,de,friends,ages
-
-int64,string,s,"string,array"
-
-,,,
-#,hans,,
-1,simon,LALALALA,"simon,""jo
-nas"",""a,b""","21,24,12"`, ``, fmt.Errorf(`error executing template: template: tmpl:1:3: executing "tmpl" at <file_csv "somefile.json" ','>: error calling file_csv: 'somefile.json' 's' is no valid format`)},
-		{`id,name,,ages
-int64,string,"string,array","int64,array"`, `[]`, nil},
-		{`id,name,friends,ages
-int64,string,"stringer,array","int64,array"`, ``, fmt.Errorf(`error executing template: template: tmpl:1:3: executing "tmpl" at <file_csv "somefile.json" ','>: error calling file_csv: 'somefile.json' 'stringer,array' is no valid format`)},
+	type args struct {
+		csv []byte
 	}
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
-			root := []byte(fmt.Sprintf(`{{ file_csv "somefile.json" ',' | marshal }}`))
-
-			target := []byte(testCase.csv)
+	testCases := []struct {
+		name        string
+		args        args
+		want        string
+		expectError bool
+	}{
+		{
+			name: "simple_csv",
+			args: args{
+				csv: []byte(`id,name
+					int,string
+					10,hello`),
+			},
+			want:        `[{"id":10,"name":"hello"}]`,
+			expectError: false,
+		},
+		{
+			name: "complex_csv_string_array",
+			args: args{
+				csv: []byte(`id,name,fields
+					int,string,"string,array"
+					10,hello,"title,subtitle"`),
+			},
+			want:        `[{"fields":["title","subtitle"],"id":10,"name":"hello"}]`,
+			expectError: false,
+		},
+		{
+			name: "complex_csv_int_array",
+			args: args{
+				csv: []byte(`id,name,fields
+					int,string,"int64,array"
+					10,hello,"10,20"`),
+			},
+			want:        `[{"fields":[10,20],"id":10,"name":"hello"}]`,
+			expectError: false,
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			root := []byte(`{{ file_csv "somefile.json" ',' | marshal }}`)
 
 			filesystem.Fs = afero.NewMemMapFs()
-			afero.WriteFile(filesystem.Fs, "somefile.json", target, 0644)
+			afero.WriteFile(filesystem.Fs, "somefile.json", tt.args.csv, 0644)
 
 			loader := NewLoader(datastore.NewStore(false))
+
 			res, err := loader.Render(root, "", nil)
-
-			if err == nil {
-				if string(res) != testCase.expected {
-					dmp := diffmatchpatch.New()
-
-					diffs := dmp.DiffMain(string(res), testCase.expected, false)
-
-					t.Errorf("Result differs: %s", dmp.DiffPrettyText(diffs))
-
-				}
-			} else {
-				if err.Error() != testCase.expectedErr.Error() {
-					dmp := diffmatchpatch.New()
-
-					diffs := dmp.DiffMain(testCase.expectedErr.Error(), err.Error(), false)
-
-					t.Errorf("Error differs: %s", dmp.DiffPrettyText(diffs))
-
-				}
+			if (err != nil) != tt.expectError {
+				t.Errorf("TestRender_LoadFile_CSV() got: %v, want: %v", err, tt.expectError)
 			}
-		})
-	}
-}
 
-func TestRender_LoadFile_CSV_And_Row_To_Map(t *testing.T) {
-	testCases := []struct {
-		csv         string
-		expected    string
-		expectedErr error
-	}{
-		{`id,name,friends,ages
-
-int64,string,"string,array","int64,array"
-
-,,,
-,hans,,
-1,simon,"simon,jonas,stefan","21,24,12"`, `{"hans":[],"simon":[21,24,12]}`, nil},
-	}
-	for i, testCase := range testCases {
-		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
-			root := []byte(fmt.Sprintf(`{{ file_csv "somefile.json" ',' | rows_to_map "name" "ages" | marshal }}`))
-
-			target := []byte(testCase.csv)
-
-			filesystem.Fs = afero.NewMemMapFs()
-			afero.WriteFile(filesystem.Fs, "somefile.json", target, 0644)
-
-			loader := NewLoader(datastore.NewStore(false))
-			res, err := loader.Render(root, "", nil)
-			eErrString := ""
-			if testCase.expectedErr != nil {
-				eErrString = testCase.expectedErr.Error()
-			}
-			go_test_utils.AssertErrorContains(t, err, eErrString)
-
-			if err == nil {
-				go_test_utils.AssertStringEquals(t, string(res), testCase.expected)
+			if !reflect.DeepEqual(res, []byte(tt.want)) {
+				t.Errorf("TestRender_LoadFile_CSV() got: %v, want: %v", string(res), tt.want)
 			}
 		})
 	}

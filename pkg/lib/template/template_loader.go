@@ -16,9 +16,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/programmfabrik/apitest/pkg/lib/datastore"
+	"github.com/programmfabrik/go-csvx"
 
 	"github.com/programmfabrik/apitest/pkg/lib/cjson"
-	"github.com/programmfabrik/apitest/pkg/lib/csv"
 	"github.com/programmfabrik/apitest/pkg/lib/util"
 
 	"io/ioutil"
@@ -154,30 +154,36 @@ func (loader *Loader) Render(
 			if err != nil {
 				return nil, err
 			}
+
 			fileBytes, err := ioutil.ReadAll(file)
 			if err != nil {
 				return nil, err
 			}
-			data, err := csv.CSVToMap(fileBytes, delimiter)
+
+			csvData, err := csvx.NewCSV(',', '#', true).ToTypedMap(fileBytes)
 			if err != nil {
-				return data, fmt.Errorf("'%s' %s", path, err)
+				return nil, errors.Wrap(err, "Could not parse csv data")
 			}
-			return data, err
+
+			return csvData, err
 		},
 		"parse_csv": func(path string, delimiter rune) ([]map[string]interface{}, error) {
 			_, file, err := util.OpenFileOrUrl(path, rootDir)
 			if err != nil {
 				return nil, err
 			}
+
 			fileBytes, err := ioutil.ReadAll(file)
 			if err != nil {
 				return nil, err
 			}
-			data, err := csv.GenericCSVToMap(fileBytes, delimiter)
+
+			csvData, err := csvx.NewCSV(',', '#', true).ToTypedMap(fileBytes)
 			if err != nil {
-				return data, fmt.Errorf("'%s' %s", path, err)
+				return nil, errors.Wrap(err, "Could not parse csv data")
 			}
-			return data, err
+
+			return csvData, err
 		},
 		"file_sqlite": func(path, statement string) ([]map[string]interface{}, error) {
 			sqliteFile := filepath.Join(rootDir, path)
