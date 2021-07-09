@@ -1,0 +1,11 @@
+{
+    "http_server": {
+        "addr": ":9999",
+        "dir": "../_res",
+        "testmode": false
+    },
+    "name": "tests for semantic version comparisons (semver)",
+    "tests": [
+        "@test_semver_compare.json"
+    ]
+}

@@ -1,0 +1,46 @@
+{
+    "name": "semantic version comparisons (semver)",
+    "request": {
+        "server_url": "http://localhost:9999",
+        "endpoint": "bounce-json",
+        "method": "POST",
+        "body": {
+            "semver_easydb_release": {{ semver_compare "v5.86.0" "v6.0.0" }},
+            "semver_easydb_patch": {{ semver_compare "v5.86.2" "v6.0.0" }},
+            "semver_lt": {{ semver_compare "v5.1.2" "v6.0.0" }},
+            "semver_eq": {{ semver_compare "v6.0.0" "v6.0.0" }},
+            "semver_gt": {{ semver_compare "v7.1.2" "v6.0.0" }}
+        }
+    },
+    "response": {
+        "statuscode": 200,
+        "body": {
+            "body": {
+                "semver_easydb_release:control": {
+                    "is_integer": true
+                },
+                "semver_easydb_release": -1,
+
+                "semver_easydb_patch:control": {
+                    "is_integer": true
+                },
+                "semver_easydb_patch": -1,
+
+                "semver_lt:control": {
+                    "is_integer": true
+                },
+                "semver_lt": -1,
+
+                "semver_eq:control": {
+                    "is_integer": true
+                },
+                "semver_eq": 0,
+
+                "semver_gt:control": {
+                    "is_integer": true
+                },
+                "semver_gt": 1
+            }
+        }
+    }
+}
